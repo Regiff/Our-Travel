@@ -1,0 +1,88 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model Account {
+  id                String  @id @map("_id") @default(auto()) @db.ObjectId
+  access_token      String
+  expires_at        BigInt
+  id_token          String
+  provider          String
+  providerAccountId String
+  scope             String
+  token_type        String
+  type              String
+  userId            String @unique
+  user              User   @relation(fields: [userId], references: [id])
+
+  @@unique([provider, providerAccountId])
+}
+
+model Blog {
+  id          String   @id @default(cuid()) @map("_id")
+  userId      String
+  title       String
+  desc        String
+  content     String
+  img         String?
+  category    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  topPost     Boolean
+  featured    Boolean  @default(false)
+
+  user        User     @relation(fields: [userId], references: [id])
+
+}
+
+
+model Post {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt   DateTime @default(now())
+  title       String
+  img         String?
+  desc        String
+  featured    Boolean  @default(false) // ✅ Ensure this exists
+  topPost     Boolean  @default(false)
+  category    String
+  userId      String   @db.ObjectId 
+  user        User     @relation(fields: [userId], references: [id]) 
+}
+
+
+model Session {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  expires      DateTime @db.Date
+  sessionToken String   @unique
+  userId       String
+  user         User     @relation(fields: [userId], references: [id]) // 👈 Add this line
+}
+
+model User {
+  id        String   @id @map("_id") @default(auto()) @db.ObjectId
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime? 
+  password      String?
+  image         String?
+  provider      String?
+  accounts      Account[]
+  sessions      Session[]
+  blogs         Blog[]
+
+  posts         Post[] 
+}
+
+model VerificationToken {
+  id         String @id @default(auto()) @map("_id") @db.ObjectId
+  identifier String @unique
+  token      String @unique
+
+  @@unique([identifier, token])
+}
